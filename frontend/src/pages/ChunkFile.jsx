@@ -7,6 +7,8 @@ const ChunkFile = () => {
   const [selectedDoc, setSelectedDoc] = useState('');
   const [chunkingOption, setChunkingOption] = useState('by_pages');
   const [chunkSize, setChunkSize] = useState(1000);
+  const [chunkOverlap, setChunkOverlap] = useState(200);
+  const [chunkSeparators, setChunkSeparators] = useState('".", "!", "?", "\n", " "');
   const [chunks, setChunks] = useState(null);
   const [status, setStatus] = useState('');
   const [activeTab, setActiveTab] = useState('chunks');
@@ -79,17 +81,24 @@ const ChunkFile = () => {
 
     try {
       const docId = selectedDoc.endsWith('.json') ? selectedDoc : `${selectedDoc}.json`;
+
+      const requestBody = {
+        doc_id: docId,
+        chunking_option: chunkingOption,
+        chunk_size: chunkSize,
+      };
+
+      if (chunkingOption === 'by_sentences') {
+        requestBody.chunk_overlap = chunkOverlap;
+        requestBody.chunk_separators = chunkSeparators;
+      }
       
       const response = await fetch(`${apiBaseUrl}/chunk`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          doc_id: docId,
-          chunking_option: chunkingOption,
-          chunk_size: chunkSize,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       if (!response.ok) {
@@ -299,7 +308,7 @@ const ChunkFile = () => {
               </select>
             </div>
 
-            {chunkingOption === 'fixed_size' && (
+            {['fixed_size', 'by_sentences'].includes(chunkingOption)  && (
               <div className="mb-4">
                 <label className="block text-sm font-medium mb-1">Chunk Size</label>
                 <input
@@ -309,6 +318,32 @@ const ChunkFile = () => {
                   className="block w-full p-2 border rounded"
                   min="100"
                   max="5000"
+                />
+              </div>
+            )}
+
+            {chunkingOption === 'by_sentences' && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">Chunk Overlap</label>
+                <input
+                  type="number"
+                  value={chunkOverlap}
+                  onChange={(e) => setChunkOverlap(Number(e.target.value))}
+                  className="block w-full p-2 border rounded"
+                  min="10"
+                  max={chunkSize}
+                />
+              </div>
+            )}
+
+            {chunkingOption === 'by_sentences' && (
+              <div className="mb-4">
+                <label className="block text-sm font-medium mb-1">Chunk Separators</label>
+                <input
+                  type="text"
+                  value={chunkSeparators}
+                  onChange={(e) => setChunkSeparators(e.target.value)}
+                  className="block w-full p-2 border rounded"
                 />
               </div>
             )}

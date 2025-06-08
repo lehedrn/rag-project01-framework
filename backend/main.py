@@ -717,7 +717,9 @@ async def chunk_document(data: dict = Body(...)):
             method=chunking_option,
             metadata=metadata,
             page_map=page_map,
-            chunk_size=chunk_size
+            chunk_size=chunk_size,
+            chunk_overlap=data.get("chunk_overlap", 200),
+            chunk_separators=data.get("chunk_separators", None)
         )
         
         # 生成输出文件名

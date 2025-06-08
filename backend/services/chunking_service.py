@@ -15,7 +15,7 @@ class ChunkingService:
     - by_sentences: 按句子分块
     """
     
-    def chunk_text(self, text: str, method: str, metadata: dict, page_map: list = None, chunk_size: int = 1000) -> dict:
+    def chunk_text(self, text: str, method: str, metadata: dict, page_map: list = None, chunk_size: int = 1000, chunk_overlap: int = None, chunk_separators: str = None) -> dict:
         """
         将文本按指定方法分块
         
@@ -24,8 +24,9 @@ class ChunkingService:
             method: 分块方法，支持 'by_pages', 'fixed_size', 'by_paragraphs', 'by_sentences'
             metadata: 文档元数据
             page_map: 页面映射列表，每个元素包含页码和页面文本
-            chunk_size: 固定大小分块时的块大小
-            
+            chunk_size: 固定大小分块时的块大小/句子分块时的块大小
+            chunk_overlap: 句子分块时的重叠字数
+            chunk_separators: 句子分块时的分隔符
         Returns:
             包含分块结果的文档数据结构
         
@@ -69,11 +70,27 @@ class ChunkingService:
                             "metadata": chunk_metadata
                         })
             
-            elif method in ["by_paragraphs", "by_sentences"]:
+            elif method == "by_paragraphs":
                 # 对每页内容进行段落或句子分块
-                splitter_method = self._paragraph_chunks if method == "by_paragraphs" else self._sentence_chunks
+                # splitter_method = self._paragraph_chunks if method == "by_paragraphs" else self._sentence_chunks
                 for page_data in page_map:
-                    page_chunks = splitter_method(page_data['text'])
+                    page_chunks = self._paragraph_chunks(page_data['text'])
+                    for chunk in page_chunks:
+                        chunk_metadata = {
+                            "chunk_id": len(chunks) + 1,
+                            "page_number": page_data['page'],
+                            "page_range": str(page_data['page']),
+                            "word_count": len(chunk["text"].split())
+                        }
+                        chunks.append({
+                            "content": chunk["text"],
+                            "metadata": chunk_metadata
+                        })
+            elif method == "by_sentences":
+                # 对每页内容进行段落或句子分块
+                for page_data in page_map:
+
+                    page_chunks = self._sentence_chunks(page_data['text'], chunk_size=chunk_size, chunk_overlap=chunk_overlap, chunk_separators=chunk_separators.split(","))
                     for chunk in page_chunks:
                         chunk_metadata = {
                             "chunk_id": len(chunks) + 1,
@@ -95,10 +112,19 @@ class ChunkingService:
                 "total_pages": total_pages,
                 "loading_method": metadata.get("loading_method", ""),
                 "chunking_method": method,
+                "chunking_config": {}, 
                 "timestamp": datetime.now().isoformat(),
                 "chunks": chunks
             }
-            
+            # 根据chunking_method添加配置信息
+            if method == "fixed_size":
+                document_data["chunking_config"]["chunking_size"] = chunk_size
+            elif method == "by_sentences":
+                document_data["chunking_config"].update({
+                    "chunking_size": chunk_size,
+                    "chunking_overlap": chunk_overlap,
+                    "chunking_separators": chunk_separators.split(",") if chunk_separators else None
+                })
             return document_data
             
         except Exception as e:
@@ -148,7 +174,7 @@ class ChunkingService:
         paragraphs = [p.strip() for p in text.split('\n\n') if p.strip()]
         return [{"text": para} for para in paragraphs]
 
-    def _sentence_chunks(self, text: str) -> list[dict]:
+    def _sentence_chunks(self, text: str, chunk_size: int = 1000, chunk_overlap: int = 200, chunk_separators: list[str] = [".", "!", "?", "\n", " "]) -> list[dict]:
         """
         将文本按句子分块
         
@@ -159,9 +185,9 @@ class ChunkingService:
             分块后的句子列表
         """
         splitter = RecursiveCharacterTextSplitter(
-            chunk_size=1000,
-            chunk_overlap=200,
-            separators=[".", "!", "?", "\n", " "]
+            chunk_size=chunk_size,
+            chunk_overlap=chunk_overlap,
+            separators=chunk_separators,
         )
         texts = splitter.split_text(text)
         return [{"text": t} for t in texts]
