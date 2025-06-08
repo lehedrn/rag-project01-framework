@@ -29,7 +29,9 @@ class GenerationService:
             "huggingface": {
                 "Llama-2-7b-chat": "meta-llama/Llama-2-7b-chat-hf",
                 "DeepSeek-7b": "deepseek-ai/deepseek-llm-7b-chat",
-                "DeepSeek-R1-Distill-Qwen": "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+                "DeepSeek-R1-Distill-Qwen": "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B",
+                "Qwen2.5-0.5B-Instruct": "Qwen/Qwen2.5-0.5B-Instruct",
+                "Qwen2.5-1.5B-Instruct": "Qwen/Qwen2.5-1.5B-Instruct",
             },
             "openai": {
                 "gpt-3.5-turbo": "gpt-3.5-turbo",
@@ -60,7 +62,8 @@ class GenerationService:
             model_name = get_huggingface_model_path(model_name)
             model = AutoModelForCausalLM.from_pretrained(
                 model_name,
-                torch_dtype=torch.float16,
+                # torch_dtype=torch.float16,
+                torch_dtype=torch.float32,
                 device_map="auto"
             )
             tokenizer = AutoTokenizer.from_pretrained(
