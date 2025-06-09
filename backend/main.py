@@ -380,6 +380,28 @@ async def delete_collection(provider: str, collection_name: str):
             detail=str(e)
         )
 
+def loaded_docs(loaded_dir):
+    documents = []
+    if os.path.exists(loaded_dir):
+        for filename in os.listdir(loaded_dir):
+            if filename.endswith('.json'):
+                file_path = os.path.join(loaded_dir, filename)
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    doc_data = json.load(f)
+                    documents.append({
+                        "id": filename,
+                        "name": filename,
+                        "type": "loaded",
+                        "metadata": {
+                            "total_pages": doc_data.get("total_pages"),
+                            "total_chunks": doc_data.get("total_chunks"),
+                            "loading_method": doc_data.get("loading_method"),
+                            "chunking_method": doc_data.get("chunking_method"),
+                            "timestamp": doc_data.get("timestamp")
+                        }
+                    })
+    return documents
+
 @app.get("/documents")
 async def get_documents(type: str = Query("all")):
     try:
@@ -406,6 +428,7 @@ async def get_documents(type: str = Query("all")):
                                     "timestamp": doc_data.get("timestamp")
                                 }
                             })
+
 
         # 读取chunked文档
         if type in ["all", "chunked"]:

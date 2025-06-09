@@ -190,9 +190,9 @@ class ParsingService:
             
             # Adjust the document name to include strategy if unstructured
             if parse_method == "unstructured":
-                doc_name = f"{base_name}_{parse_method}_fast_basic_{timestamp}"
+                doc_name = f"{base_name}_parse_{parse_method}_fast_basic_{timestamp}"
             else:
-                doc_name = f"{base_name}_{parse_method}_{timestamp}"
+                doc_name = f"{base_name}_parse_{parse_method}_{timestamp}"
             
             # 构建文档数据结构，确保所有值都是可序列化的
             document_data = {
@@ -208,8 +208,8 @@ class ParsingService:
             }
             
             # 保存到文件
-            filepath = os.path.join("01-parse-docs", f"{doc_name}.json")
-            os.makedirs("01-parse-docs", exist_ok=True)
+            filepath = os.path.join("01-loaded-docs", f"{doc_name}.json")
+            os.makedirs("01-loaded-docs", exist_ok=True)
             
             with open(filepath, 'w', encoding='utf-8') as f:
                 json.dump(document_data, f, ensure_ascii=False, indent=2)
