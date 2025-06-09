@@ -63,6 +63,8 @@ class LoadingService:
                 return self._load_with_pdfplumber(file_path)
             elif method == "pdf2image":
                 return self._load_with_pdf2image(file_path)
+            elif method == "pdfnumber":
+                return self._load_with_pdfnumber(file_path)
             elif method == "unstructured":
                 return self._load_with_unstructured(
                     file_path, 
