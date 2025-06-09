@@ -1,7 +1,10 @@
+import shutil
 from pypdf import PdfReader
 from unstructured.partition.pdf import partition_pdf
 import pdfplumber
 import fitz  # PyMuPDF
+import pdf2image
+import pytesseract
 import logging
 import os
 from datetime import datetime
@@ -58,6 +61,8 @@ class LoadingService:
                 return self._load_with_pypdf(file_path)
             elif method == "pdfplumber":
                 return self._load_with_pdfplumber(file_path)
+            elif method == "pdf2image":
+                return self._load_with_pdf2image(file_path)
             elif method == "unstructured":
                 return self._load_with_unstructured(
                     file_path, 
@@ -146,6 +151,40 @@ class LoadingService:
             logger.error(f"PyPDF error: {str(e)}")
             raise
     
+    def _load_with_pdf2image(self, file_path: str) -> str:
+        """
+        使用pdf2image库加载PDF文档。
+        适合需要处理图像的场景。
+        """
+        try:
+            text_blocks = []
+
+            image_output_dir = f"01-loaded-docs/images/{datetime.now().strftime('%Y%m%d%H%M%S')}"
+            os.makedirs(image_output_dir, exist_ok=True)
+            
+            images = pdf2image.convert_from_path(file_path)
+
+            self.total_pages = len(images)
+
+            for i, image in enumerate(images, 1):
+                image.save(f"{image_output_dir}/page_{i}.png", "PNG")
+            
+            for page_num, image in enumerate(images, 1):
+                text = pytesseract.image_to_string(image, lang="chi_sim")
+                text_blocks.append({
+                    "text": text.strip(),
+                    "page": page_num
+                })
+
+            self.current_page_map = text_blocks
+
+            shutil.rmtree(image_output_dir)
+            
+            return "\n".join(block["text"] for block in text_blocks)
+        except Exception as e:
+            logger.error(f"pdf2image error: {str(e)}")
+            raise
+
     def _load_with_unstructured(self, file_path: str, strategy: str = "fast", chunking_strategy: str = "basic", chunking_options: dict = None) -> str:
         """
         使用unstructured库加载PDF文档。
