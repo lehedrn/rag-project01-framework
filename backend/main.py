@@ -581,6 +581,33 @@ async def parse_file(
             metadata,
             page_map=page_map
         )
+
+        # 转换成标准化的chunks格式
+        chunks = []
+        for idx, page in enumerate(parsed_content["content"], 1):
+            chunk_metadata = {
+                "chunk_id": idx,
+                "page_number": page["page"],
+                "page_range": str(page["page"]),
+                "word_count": len(page["content"].split()),
+                "type": page["type"]
+            }
+            if "title" in page:
+                chunk_metadata["title"] = page["title"]
+            chunks.append({
+                "content": page["content"],
+                "metadata": chunk_metadata
+            })
+
+        # 使用 ParsingService 保存文档
+        parsing_service.save_document(
+            filename=file.filename,
+            chunks=chunks,
+            metadata=metadata,
+            parse_method=loading_method,
+            parsing_option=parsing_option
+        )
+
         
         # Clean up temp file
         os.remove(temp_path)

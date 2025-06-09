@@ -1,4 +1,6 @@
+import json
 import logging
+import os
 from typing import Dict, List
 import fitz  # PyMuPDF
 import pandas as pd
@@ -178,4 +180,43 @@ class ParsingService:
                     "content": content,
                     "page": page["page"]
                 })
-        return parsed_content 
+        return parsed_content
+
+    def save_document(self, filename: str, chunks: list, metadata: dict, parse_method: str, parsing_option: str = None) -> str:
+
+        try:
+            timestamp = datetime.now().strftime('%Y%m%d%H%M%S')
+            base_name = filename.replace('.pdf', '').split('_')[0]
+            
+            # Adjust the document name to include strategy if unstructured
+            if parse_method == "unstructured":
+                doc_name = f"{base_name}_{parse_method}_fast_basic_{timestamp}"
+            else:
+                doc_name = f"{base_name}_{parse_method}_{timestamp}"
+            
+            # 构建文档数据结构，确保所有值都是可序列化的
+            document_data = {
+                "filename": str(filename),
+                "total_chunks": int(len(chunks)),
+                "total_pages": int(metadata.get("total_pages", 1)),
+                "loading_method": str(parse_method),
+                "loading_strategy": "fast" if parse_method == "unstructured" else None,
+                "chunking_strategy": "basic" if parse_method == "unstructured" else None,
+                "chunking_method": "parse",
+                "timestamp": datetime.now().isoformat(),
+                "chunks": chunks
+            }
+            
+            # 保存到文件
+            filepath = os.path.join("01-parse-docs", f"{doc_name}.json")
+            os.makedirs("01-parse-docs", exist_ok=True)
+            
+            with open(filepath, 'w', encoding='utf-8') as f:
+                json.dump(document_data, f, ensure_ascii=False, indent=2)
+                
+            return filepath
+            
+        except Exception as e:
+            logger.error(f"Error saving document: {str(e)}")
+            raise
+ 

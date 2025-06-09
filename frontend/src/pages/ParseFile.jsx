@@ -9,7 +9,7 @@ const ParseFile = () => {
   const [parsedContent, setParsedContent] = useState(null);
   const [status, setStatus] = useState('');
   const [docName, setDocName] = useState('');
-  const [isProcessed, setIsProcessed] = useState(false);
+  // const [isProcessed, setIsProcessed] = useState(false);
 
   const handleProcess = async () => {
     if (!file || !loadingMethod || !parsingOption) {
@@ -19,7 +19,7 @@ const ParseFile = () => {
 
     setStatus('Processing...');
     setParsedContent(null);
-    setIsProcessed(false);
+    // setIsProcessed(false);
 
     try {
       const formData = new FormData();
@@ -39,7 +39,7 @@ const ParseFile = () => {
       const data = await response.json();
       setParsedContent(data.parsed_content);
       setStatus('Processing completed successfully!');
-      setIsProcessed(true);
+      // setIsProcessed(true);
     } catch (error) {
       console.error('Error:', error);
       setStatus(`Error: ${error.message}`);
@@ -83,6 +83,7 @@ const ParseFile = () => {
               >
                 <option value="pymupdf">PyMuPDF</option>
                 <option value="pypdf">PyPDF</option>
+                <option value="pdf2image">PDF2Image</option>
                 <option value="unstructured">Unstructured</option>
                 <option value="pdfplumber">PDF Plumber</option>
               </select>
@@ -110,6 +111,14 @@ const ParseFile = () => {
               Process File
             </button>
           </div>
+
+          {status && (
+            <div className={`p-4 rounded-lg ${
+              status.includes('Error') ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'
+            }`}>
+              {status}
+            </div>
+          )}
         </div>
 
         {/* Right Panel (9/12) */}
